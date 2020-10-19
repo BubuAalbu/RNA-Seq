@@ -1,0 +1,55 @@
+BiocManager::install('clusterProfiler')
+BiocManager::install('DO.db')
+library('clusterProfiler')
+d <- read.csv('Deseq_Symbols.csv', header = TRUE, sep = ',')
+head(d)
+## assume that 1st column is ID
+## 2nd column is fold change
+
+## feature 1: numeric vector
+geneList <- d[,2]
+
+## feature 2: named vector
+names(geneList) <- as.character(d[,7])
+
+## feature 3: decreasing order
+geneList <- sort(geneList, decreasing = TRUE)
+
+gene <- names(geneList)
+head(gene)
+
+BiocManager::install("org.Mm.eg.db")
+library('org.Mm.eg.db')
+
+#### GO ANNOTATION ####
+ggo <- groupGO(gene     = gene,
+               OrgDb    = org.Mm.eg.db,
+               ont      = "CC",
+               level    = 3,
+               readable = TRUE)
+
+head(ggo)
+
+##### OVERREPRESENTATION ######
+
+ego <- enrichGO(gene          = gene,
+                universe      = names(geneList),
+                OrgDb         = org.Mm.eg.db,
+                ont           = "BP",
+                pAdjustMethod = "BH",
+                pvalueCutoff  = 0.01,
+                qvalueCutoff  = 0.05,
+                readable      = TRUE)
+head(ego)
+
+ego3 <- gseGO(geneList     = geneList,
+              OrgDb        = org.Mm.eg.db,
+              ont          = "CC",
+              minGSSize    = 100,
+              maxGSSize    = 500,
+              pvalueCutoff = 0.05,
+              verbose      = FALSE)
+head(ego3)
+
+GSEAres <- ego3
+write.csv(GSEAres, 'GSEAres.csv')
